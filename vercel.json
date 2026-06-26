@@ -1,0 +1,11 @@
+{
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_JAVA_BACKEND_URL": "@java_backend_url",
+    "NEXT_PUBLIC_PREDICTION_API_URL": "@prediction_api_url"
+  }
+}
