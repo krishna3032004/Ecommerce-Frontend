@@ -14,14 +14,11 @@ A full-stack **E-commerce Price Tracker** that allows users to search products, 
 
 - **⚡ Smart Scraping**
   - Uses **Puppeteer** to scrape product details and prices from Amazon & Flipkart.
-  - Stores:
-    - Current Price
-    - Lowest Price
-    - Highest Price
+  - Stores Current Price, Lowest Price, and Highest Price.
 
 - **📈 Price History Visualization**
   - Interactive chart showing how the price has changed over time.
-  - Automatically updates every 12 hours.
+  - Automatically updates every night at 2 AM IST.
 
 - **🤖 Machine Learning Prediction**
   - Uses **Facebook Prophet** (Python) to predict future prices.
@@ -36,13 +33,11 @@ A full-stack **E-commerce Price Tracker** that allows users to search products, 
   - Small fluctuations are ignored for better accuracy.
 
 - **💡 "Should You Buy?"**
-  - Smart suggestion system based on:
-    - Current price vs predicted drop.
-    - Historical lows.
+  - Smart suggestion system based on current price vs predicted drop and historical lows.
 
 - **⏳ Automatic Price Updates**
-  - GitHub Actions scheduler runs **every 12 hours** to scrape fresh prices for all tracked products.
-  - No manual refresh needed.
+  - Backend cron job runs every night at **2 AM IST** to scrape fresh prices for all tracked products.
+  - No manual refresh needed. No GitHub Actions required.
 
 ---
 
@@ -54,8 +49,11 @@ A full-stack **E-commerce Price Tracker** that allows users to search products, 
 - Chart.js / Recharts
 
 **Backend:**
-- Node.js + Express
-- MongoDB + Mongoose
+- Java 17 + Spring Boot 3
+- MongoDB Atlas (product data)
+- PostgreSQL / Neon (price history)
+- Spring Mail (email alerts)
+- Spring Scheduler (automated cron job)
 
 **Machine Learning:**
 - Python
@@ -66,66 +64,54 @@ A full-stack **E-commerce Price Tracker** that allows users to search products, 
 - Puppeteer
 - Cheerio
 
-**Automation:**
-- GitHub Actions (Cron job every 12h)
-- Nodemailer (Email alerts for drops)
-
 ---
 
 ## 📂 Project Workflow
 
-1️⃣ **User enters a product link**  
-   - If found in DB → Fetch data instantly.  
+1️⃣ **User enters a product link**
+   - If found in DB → Fetch data instantly.
    - If not found → Scrape product details & store.
 
-2️⃣ **Scraper fetches details**  
+2️⃣ **Scraper fetches details**
    - Extracts current, lowest, and highest price.
    - Saves in `priceHistory`.
 
-3️⃣ **Prediction Engine runs**  
+3️⃣ **Prediction Engine runs**
    - Sends price history to ML API (Python Prophet deployed on Render).
-   - Gets:
-     - Predicted price
-     - Lower & upper bounds
-     - Drop chance
+   - Gets predicted price, lower & upper bounds, and drop chance.
 
 4️⃣ **Frontend displays results**
-   - **Price History Graph**
-   - **Future Prediction Graph**
+   - Price History Graph
+   - Future Prediction Graph
    - Drop chance & buy suggestion.
 
-5️⃣ **Scheduler updates prices**
-   - Every 12 hours, GitHub Action runs `updatePrices.js`.
-   - Scrapes fresh data for all products in DB.
-   - Sends email alerts for drops.
-
-<!-- ---
-
-## 📊 Example Prediction Data
-
-| Date       | Actual Price | Predicted Price | Lower Bound | Upper Bound | Drop Chance |
-|------------|--------------|----------------|-------------|-------------|-------------|
-| 2025-08-10 | ₹2299        | ₹2100          | ₹2000       | ₹2200       | 78%         |
-| 2025-08-11 | ₹2299        | ₹2150          | ₹2050       | ₹2250       | 73%         |
-| 2025-08-12 | ₹2299        | ₹2200          | ₹2100       | ₹2300       | 72%         |
-
---- -->
-
-## 📅 Scheduler (GitHub Actions)
-
-- Runs every **12 hours**:
-```yaml
-on:
-  schedule:
-    - cron: "0 */12 * * *"
-```    
-## ⚙️ Executes
-- **cron/updatePrices.js** – Scrapes fresh prices for all products and updates the database.
-- **Email Alerts** – Sends notifications to users if a product’s price drops below their desired threshold.
+5️⃣ **Backend auto-updates prices**
+   - Every night at 2 AM IST, the Java backend automatically scrapes fresh prices for all tracked products.
+   - Sends email alerts to subscribers if a price drops.
 
 ---
 
-## 🏗 Installation
+## 🏗 Project Structure
+
+```
+├── app/                     # Next.js frontend pages
+├── Components/              # Reusable UI components
+├── public/                  # Static assets
+├── pricetracker-java/       # Java Spring Boot backend
+│   ├── src/
+│   │   └── main/java/com/pricetracker/
+│   │       ├── controller/  # REST API endpoints
+│   │       ├── service/     # Business logic + cron job
+│   │       ├── model/       # MongoDB & PostgreSQL models
+│   │       └── repository/  # Database queries
+│   ├── Dockerfile
+│   └── pom.xml
+└── scraper-server/          # Node.js Puppeteer scraping server
+```
+
+---
+
+## 🚀 Installation & Setup
 
 ### 1️⃣ Clone the repository
 ```bash
@@ -133,78 +119,73 @@ git clone https://github.com/yourusername/price-tracker.git
 cd price-tracker
 ```
 
-
-## 🚀 Installation & Setup
-
-### 2️⃣ Install Dependencies
-
-#### 📦 Frontend
+### 2️⃣ Frontend Setup
 ```bash
 npm install
 ```
 
-## 📦 Backend
-```bash
-npm install
-
-🤖 Python ML Model
-```bash
-pip install -r requirements.txt
+Create a `.env.local` file:
+```
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
 ```
 
-3️⃣ Run Locally  
-
-▶️ Frontend  
+Run the frontend:
 ```bash
 npm run dev
 ```
 
-▶️ Backend  
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+### 3️⃣ Java Backend Setup
+
+**Requirements:** Java 17+, Maven 3.6+
+
 ```bash
-node server.js
+cd pricetracker-java
+mvn clean install
+mvn spring-boot:run
 ```
 
-▶️ ML API  
+Backend starts at **http://localhost:8080**
+
+All database and email config is in `src/main/resources/application.properties`. For local development, create `application-local.properties` with your actual credentials and run:
+
 ```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+---
+
+### 4️⃣ Python ML API Setup
+```bash
+pip install -r requirements.txt
 python app.py
 ```
 
+---
 
+## 🌐 Deployment
 
+| Service | Platform |
+|---|---|
+| Frontend | Vercel |
+| Java Backend | Render (Docker) |
+| ML API | Render |
+| Scraper Server | Render |
+| Database | MongoDB Atlas + Neon PostgreSQL |
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+The Java backend is deployed on Render using Docker. A `Dockerfile` is included in the `pricetracker-java/` folder.
 
-## Getting Started
+---
 
-First, run the development server:
+## ⚙️ Backend API Endpoints
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/getProductByLink?url=` | Fetch or scrape a product by link |
+| GET | `/api/search?q=` | Search tracked products by name |
+| GET | `/api/trending-products` | Get recently tracked products |
+| POST | `/api/price-alert` | Subscribe for price drop email alerts |
+| GET | `/api/update-prices` | Manually trigger a price refresh |
